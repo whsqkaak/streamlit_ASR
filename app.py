@@ -6,7 +6,7 @@ import streamlit as st
 
 from pathlib import Path
 
-from asr import inference
+from asr import load_model, inference
 
 LOG_DIR = "./logs"
 DATA_DIR = "./data"
@@ -36,6 +36,11 @@ def upload_audio() -> Path:
         
         return audio_path
 
+@st.experimental_singleton(show_spinner=False)
+def call_load_model():
+    generator = load_model()
+    return generator
+
 def main():
     st.header("Speech-to-Text app with streamlit")
     st.markdown(
@@ -48,10 +53,13 @@ This app only process Korean.
     audio_path = upload_audio()
     logger.info(f"Uploaded audio file: {audio_path}")
     
+    with st.spinner(text="Wait for loading ASR Model..."):
+        generator = call_load_model()
+    
     if audio_path is not None:
         start_time = time.time()
         with st.spinner(text='Wait for inference...'):
-            output = inference(audio_path)
+            output = inference(generator, audio_path)
 
         end_time = time.time()
 

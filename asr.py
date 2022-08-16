@@ -6,7 +6,7 @@ from transformers import (
     pipeline,
 )
 
-def inference(audio_path: Path):
+def load_model():
     model = Wav2Vec2ForCTC.from_pretrained("kresnik/wav2vec2-large-xlsr-korean")
     processor = Wav2Vec2Processor.from_pretrained("kresnik/wav2vec2-large-xlsr-korean")
     
@@ -17,6 +17,9 @@ def inference(audio_path: Path):
         feature_extractor=processor.feature_extractor,
         chunk_length_s=2.0
     )
+    
+    return generator
 
+def inference(generator, audio_path: Path):
     output = generator(str(audio_path.absolute()))
     return output
