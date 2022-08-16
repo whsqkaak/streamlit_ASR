@@ -1,6 +1,6 @@
+import time
 import datetime
 import logging
-import pydub
 import soundfile
 import streamlit as st
 
@@ -8,18 +8,23 @@ from pathlib import Path
 
 from asr import inference
 
+LOG_DIR = "./logs"
+DATA_DIR = "./data"
 logger = logging.getLogger(__name__)
 
 def upload_audio() -> Path:
-    # TODO: refactoring
     # Upload audio file
     uploaded_file = st.file_uploader("Choose a audio file(wav, mp3, flac)", type=['wav','mp3','flac'])
     if uploaded_file is not None:
         # Save audio file
         audio_data, samplerate = soundfile.read(uploaded_file)
+        
+        # Make save directory
+        now = datetime.datetime.now()
         now_time = now.strftime('%Y-%m-%d-%H:%M:%S')
-        audio_dir = Path('./data') / f"{now_time}"
+        audio_dir = Path(DATA_DIR) / f"{now_time}"
         audio_dir.mkdir(parents=True, exist_ok=True)
+        
         audio_path = audio_dir / uploaded_file.name
         soundfile.write(audio_path, audio_data, samplerate)
         
@@ -31,7 +36,6 @@ def upload_audio() -> Path:
         
         return audio_path
 
-    
 def main():
     st.header("Speech-to-Text app with streamlit")
     st.markdown(
@@ -42,11 +46,20 @@ This app only process Korean.
     )
     
     audio_path = upload_audio()
-    st.write(f"audio_path: {audio_path}")
-    print(audio_path)
-    output = inference(audio_path)
-    # TODO Write model loading
-    st.write(f"output: {output}")
+    logger.info(f"Uploaded audio file: {audio_path}")
+    
+    if audio_path is not None:
+        start_time = time.time()
+        with st.spinner(text='Wait for inference...'):
+            output = inference(audio_path)
+
+        end_time = time.time()
+
+        process_time = time.gmtime(end_time - start_time)
+        process_time = time.strftime("%H hour %M min %S secs", process_time)
+
+        st.success(f"Inference finished in {process_time}.")
+        st.write(f"output: {output['text']}")
     
 
 if __name__ == "__main__":
@@ -61,7 +74,7 @@ if __name__ == "__main__":
     
     now = datetime.datetime.now()
     now_time = now.strftime('%Y-%m-%d-%H:%M:%S')
-    log_dir = Path("./logs")
+    log_dir = Path(LOG_DIR)
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / f"{now_time}.log"
     file_handler = logging.FileHandler(str(log_file), encoding='utf-8')

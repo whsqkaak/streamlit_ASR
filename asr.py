@@ -15,8 +15,8 @@ def inference(audio_path: Path):
         model=model,
         tokenizer=processor.tokenizer,
         feature_extractor=processor.feature_extractor,
-        chunk_length_s=10.0
+        chunk_length_s=2.0
     )
-    print(audio_path)
+
     output = generator(str(audio_path.absolute()))
     return output
